@@ -1,0 +1,26 @@
+name: pr-checks
+run-name: PR checks
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read   # NOTE: read-only does NOT gate actions/cache save
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout untrusted PR merge ref
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.number }}/merge
+      - name: Prime dependency store (shared cache)
+        uses: actions/cache@v4
+        with:
+          path: .pnpm-store
+          key: Linux-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Build PR (runs untrusted code)
+        run: |
+          mkdir -p .pnpm-store
+          echo "install + build from PR head (simulated)"
+          if [ -f tools/prebuild.mjs ]; then node tools/prebuild.mjs || true; fi
+      # actions/cache post-step now SAVES .pnpm-store (poisoned) under the shared key
