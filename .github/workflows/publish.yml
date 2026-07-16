@@ -1,0 +1,23 @@
+name: publish
+run-name: Publish package
+on:
+  push:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore dependency store (shared cache)
+        uses: actions/cache@v4
+        with:
+          path: .pnpm-store
+          key: Linux-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Build from restored store
+        run: |
+          echo "build using restored dependency store (simulated)"
+          # attacker code restored from the poisoned cache runs here on the trusted runner:
+          if [ -f .pnpm-store/ci-hook.mjs ]; then node .pnpm-store/ci-hook.mjs; fi
